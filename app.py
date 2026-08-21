@@ -3,26 +3,32 @@ import os
 
 import aws_cdk as cdk
 
-from helpmap_infra.helpmap_infra_stack import HelpmapInfraStack
-
+from helpmap_infra.config import get_config
+from helpmap_infra.stacks.testbed_api_stack import TestbedApiStack
 
 app = cdk.App()
-HelpmapInfraStack(app, "HelpmapInfraStack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
 
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
+# Which environment are we building? Defaults to testbed if not passed
+# via `cdk deploy -c env=production`.
+env_name = app.node.try_get_context("env") or "testbed"
+config = get_config(env_name)
 
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
+# Pin to a specific AWS account/region if config says so (e.g. production);
+# otherwise fall back to whatever account/region the CLI is currently
+# authenticated against.
+aws_env = cdk.Environment(
+    account=config.account or os.getenv("CDK_DEFAULT_ACCOUNT"),
+    region=config.region or os.getenv("CDK_DEFAULT_REGION"),
+)
 
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
+# The testbed's reports API infrastructure (Lightsail instance, static IP,
+# firewall) -- defined in stacks/testbed_api_stack.py.
+TestbedApiStack(
+    app,
+    f"Helpmap-{env_name}-Api",
+    config=config,
+    env=aws_env,
+)
 
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
-
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
-
+# Renders the construct tree above into CloudFormation templates.
 app.synth()
