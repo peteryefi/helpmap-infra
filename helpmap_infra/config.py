@@ -23,7 +23,9 @@ class EnvironmentConfig:
     mapbox_token_secret_name: str
     restrict_reports_by_area: bool
     use_fake_user_location: bool
-    map_style_url: Optional[str] = None  # must be last -- has a default
+    pwa_monorepo_app_root: str
+    map_style_url: Optional[str] = None
+
 
 
 _CONFIGS = {
@@ -33,10 +35,11 @@ _CONFIGS = {
         region="us-west-2",
         api_domain_name="api-testbed.helpmap.us",
         pwa_domain_name="testbed.helpmap.us",
-        admin_cidr="132.205.229.37/32",
+        admin_cidr="24.225.231.56/32",
         lightsail_bundle_id="nano_3_0",
         lightsail_blueprint_id="ubuntu_24_04",
         pwa_repository_url="https://github.com/Helpmap-Agency/helpmap-LACounty",
+        pwa_monorepo_app_root="app",
         pwa_branch_name="testbed",
         root_domain="helpmap.us",
         github_token_secret_name="helpmap/github-token",
