@@ -45,7 +45,7 @@ _CONFIGS = {
         github_token_secret_name="helpmap/github-token",
         mapbox_token_secret_name="helpmap/mapbox-token",
         restrict_reports_by_area=False,
-        use_fake_user_location=True,
+        use_fake_user_location=False,
         map_style_url=None,
     ),
 }

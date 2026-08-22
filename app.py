@@ -5,6 +5,7 @@ import aws_cdk as cdk
 
 from helpmap_infra.config import get_config
 from helpmap_infra.stacks.testbed_api_stack import TestbedApiStack
+from helpmap_infra.stacks.amplify_pwa_stack import AmplifyPwaStack
 
 app = cdk.App()
 
@@ -26,6 +27,17 @@ aws_env = cdk.Environment(
 TestbedApiStack(
     app,
     f"Helpmap-{env_name}-Api",
+    config=config,
+    env=aws_env,
+)
+
+# The testbed PWA's Amplify hosting -- CfnApp/Branch/Domain, defined in
+# stacks/amplify_stack.py. Same config object and environment binding as
+# the API stack above, so both stacks always deploy against the same
+# account/region for a given `-c env=...`.
+AmplifyPwaStack(
+    app,
+    f"Helpmap-{env_name}-Pwa",
     config=config,
     env=aws_env,
 )

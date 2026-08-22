@@ -57,6 +57,14 @@ class AmplifyPwaStack(Stack):
                     name="NEXT_PUBLIC_MAP_TOKEN",
                     value=mapbox_token.secret_value.unsafe_unwrap(),
                 ),
+                amplify.CfnApp.EnvironmentVariableProperty(
+                    name="NEXT_PUBLIC_RESTRICT_REPORTS_BY_AREA",
+                    value=str(config.restrict_reports_by_area).lower(),
+                ),
+                amplify.CfnApp.EnvironmentVariableProperty(
+                    name="NEXT_PUBLIC_USE_FAKE_USER_LOCATION",
+                    value=str(config.use_fake_user_location).lower(),
+                ),
             ],
         )
 
