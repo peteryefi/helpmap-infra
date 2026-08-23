@@ -36,7 +36,7 @@ _CONFIGS = {
         api_domain_name="api-testbed.helpmap.us",
         pwa_domain_name="testbed.helpmap.us",
         admin_cidr="24.225.231.56/32",
-        lightsail_bundle_id="nano_3_0",
+        lightsail_bundle_id="micro_3_0",
         lightsail_blueprint_id="ubuntu_24_04",
         pwa_repository_url="https://github.com/Helpmap-Agency/helpmap-LACounty",
         pwa_monorepo_app_root="app",
@@ -45,7 +45,7 @@ _CONFIGS = {
         github_token_secret_name="helpmap/github-token",
         mapbox_token_secret_name="helpmap/mapbox-token",
         restrict_reports_by_area=False,
-        use_fake_user_location=False,
+        use_fake_user_location=True,
         map_style_url=None,
     ),
 }

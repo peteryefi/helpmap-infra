@@ -22,11 +22,11 @@ class TestbedApiStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        instance_name = f"helpmap-{config.env_name}-api"
+        instance_name = f"helpmap-{config.env_name}-api-v2"
 
         instance = lightsail.CfnInstance(
             self,
-            "ApiInstance",
+            "ApiInstanceV2",
             instance_name=instance_name,
             # Lightsail requires a specific AZ, not just a region. This
             # assumes the region's first AZ exists (true for us-west-2).
