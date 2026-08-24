@@ -61,8 +61,8 @@ remembered between commands.
 ## 3. Reports API (Lightsail) — SSH access
 
 ```bash
-chmod 400 <key.pem>
-ssh -i <key.pem> ubuntu@<static-ip>
+chmod 400 ~/Downloads/<key.pem>
+ssh -i ~/Downloads/<key.pem> ubuntu@<static-ip>
 ```
 
 If SSH refuses with `Host key verification failed` (happens after the
@@ -71,6 +71,46 @@ instance is replaced, e.g. a resize — same IP, new machine, new host key):
 ```bash
 ssh-keygen -R <static-ip>
 # reconnect, type "yes" when prompted to trust the new key
+```
+
+### SSH firewalled to your IP — updating it when your IP changes
+
+**Confirmed Aug 24:** the instance's firewall (Lightsail Networking rules)
+can restrict port 22 to a specific CIDR rather than leaving it open to
+everyone. If yours is set up that way and your IP changes, SSH will just
+hang/refuse with no useful error — nothing about "Host key verification"
+here, it's a firewall drop, not a host-key mismatch.
+
+Check the current rules first:
+
+```bash
+aws lightsail get-instances --profile helpmap --region us-west-2 --query "instances[].name"
+aws lightsail get-instance-port-states --instance-name <instance-name> --profile helpmap --region us-west-2
+```
+
+Look for the CIDR on the port-22 entry. To update it:
+
+```bash
+aws lightsail put-instance-public-ports --instance-name <instance-name> --profile helpmap --region us-west-2 \
+  --port-infos \
+    fromPort=22,toPort=22,protocol=tcp,cidrs=<your-new-ip>/32 \
+    fromPort=80,toPort=80,protocol=tcp,cidrs=0.0.0.0/0 \
+    fromPort=443,toPort=443,protocol=tcp,cidrs=0.0.0.0/0
+```
+
+**`put-instance-public-ports` replaces the entire port configuration in one
+call — it does not merge.** You must list every rule you want kept (80 and
+443 open to everyone, so the nginx/certbot setup in section 5 keeps
+working) alongside the one you're actually changing, or you'll silently
+lock out HTTP/HTTPS too. Pull the exact existing 80/443 values from
+`get-instance-port-states` above rather than assuming they match this
+example.
+
+Then verify and reconnect as normal:
+
+```bash
+aws lightsail get-instance-port-states --instance-name <instance-name> --profile helpmap --region us-west-2
+ssh -i ~/Downloads/<key.pem> ubuntu@<static-ip>
 ```
 
 ---
@@ -89,7 +129,8 @@ Clone the repo (HTTPS is simplest on a box with no SSH key registered to
 GitHub):
 
 ```bash
-git clone https://YOUR_PAT@github.com/peteryefi/helpmap-reports-api.git
+git clone https://github.com/peteryefi/helpmap-reports-api.git
+# private repo: git clone https://YOUR_PAT@github.com/peteryefi/helpmap-reports-api.git
 ```
 
 Deploy:
@@ -167,7 +208,7 @@ dig api-testbed.helpmap.us   # verify propagation
 **Backup** (run from your laptop):
 
 ```bash
-scp -i <key.pem> \
+scp -i ~/Downloads/<key.pem> \
   ubuntu@<static-ip>:~/helpmap-reports-api/data/reports.db \
   ./reports-backup-$(date +%Y-%m-%d).db
 ```
@@ -180,7 +221,7 @@ connection is unsafe:
 sudo systemctl stop helpmap-api
 
 # from your laptop
-scp -i <key.pem> \
+scp -i ~/Downloads/<key.pem> \
   ./reports-backup-YYYY-MM-DD.db \
   ubuntu@<static-ip>:~/helpmap-reports-api/data/reports.db
 
@@ -402,6 +443,7 @@ server, every delete request gets `503` (fails closed, not open).
 | nginx serves a generic `404` with `nginx/1.24.0 (Ubuntu)` footer | Ubuntu's default site still enabled and/or your site's symlink missing from `sites-enabled` | check `ls /etc/nginx/sites-enabled/`; ensure your config is symlinked in AND `sudo rm sites-enabled/default` |
 | `cdk deploy`/`diff` — "Unable to resolve AWS account" | expired SSO session, or missing `--profile` flag | `aws sso login --profile helpmap`; confirm `--profile helpmap` is on the command |
 | SSH — "Host key verification failed" | instance was replaced (same IP, new host key) | `ssh-keygen -R <ip>`, reconnect, accept new key |
+| SSH just hangs / connection refused, no host-key warning | port 22 is firewalled to a specific CIDR in Lightsail Networking rules and your IP changed | `aws lightsail get-instance-port-states ...` to confirm, then `put-instance-public-ports` with your new IP — see section 3 "SSH firewalled to your IP" (remember it replaces ALL port rules, not just 22) |
 | Amplify GitHub connection — `401 Bad credentials` | wrong/mistyped token value in the secret | `curl -H "Authorization: token X" https://api.github.com/repos/<org>/<repo>` to test the token directly |
 | Amplify GitHub connection — `404` on `/hooks` despite valid token | account has Write, not Admin, on the repo — webhook management needs Admin regardless of token scope | get Admin access on the repo/org |
 | `<app-id>.amplifyapp.com` doesn't load | missing branch prefix | use `https://main.<app-id>.amplifyapp.com` |
